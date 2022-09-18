@@ -16,12 +16,11 @@
 
 int g_buffer[ROW][COL];
 int g_board[ROW][COL];
-int x = 8; 
+int x = 4; 
 int y = 0;
 int g_form;
-int g_rotation = 0;
-int tmpX;
-int tmpY;
+int g_rotation;
+int g_score;
 
 clock_t start;
 clock_t end;
@@ -214,6 +213,7 @@ int g_block[7][4][4][4] = {
 typedef enum EBlocks {
 	EMPTY,
 	BLOCK,
+	MOVING_BLOCK,
 	WALL
 };
 
@@ -236,6 +236,9 @@ void gotoxy(int x, int y)
 
 void init_game()
 {
+	g_rotation = 0;
+	g_score = 0;
+
 	for (int i = 0; i < ROW; i++) {
 		for (int j = 0; j < COL; j++) {
 			g_board[i][j] = EMPTY;
@@ -257,25 +260,30 @@ void draw_board()
 {
 	for (int i = 0; i < ROW; i++) {
 		for (int j = 0; j < COL; j++) {
+			if (g_buffer[i][j] != g_board[i][j]) {
+				gotoxy(j * 2, i);
+
 				switch (g_board[i][j])
 				{
 				case EMPTY:
-					gotoxy(j * 2, i);
 					printf("  ");
 					break;
 				case WALL:
-					gotoxy(j * 2, i);
 					printf("▦");
 					break;
 				case BLOCK:
-					gotoxy(j * 2, i);
 					printf("□");
+					break;
+				case MOVING_BLOCK:
+					printf("■");
 					break;
 				}
 				g_buffer[i][j] = g_board[i][j];
-			
+			}
 		}
 	}
+	gotoxy(35, 3);
+	printf("SCORE : %d", g_score);
 }
 
 void draw_block()
@@ -284,8 +292,24 @@ void draw_block()
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-				gotoxy(x + j * 2, y + i);
-				printf("■");
+				g_board[y + i][x + j] = MOVING_BLOCK;
+			}
+		}
+	}
+
+	for (int j = 0; j < COL; j++) {
+		g_board[0][j] = WALL;
+		
+	}
+	
+}
+
+void delete_pre_block()
+{
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
+				g_board[y + i][x + j] = EMPTY;
 			}
 		}
 	}
@@ -296,7 +320,7 @@ int can_move(int x, int y)
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-				int flag = g_board[y + i][j + x / 2];
+				int flag = g_board[y + i][j + x];
 				if (flag == BLOCK || flag == WALL) {
 					return FALSE;
 				}
@@ -311,23 +335,27 @@ void drop_block()
 	end = clock();
 	if ((float)end - start > 1000) {
 		if (can_move(x, y + 1)) {
+
+			delete_pre_block();
+
 			y++;
 			start = clock();
 		}
 	}	
+
 }
 
-void save_block()
+void cumulate_block()
 {
 	if (can_move(x, y + 1) == FALSE) {
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-					g_board[y + i][j + x / 2] = BLOCK;
+					g_board[y + i][j + x] = BLOCK;
 				}
 			}
 		}
-		x = 8;
+		x = 4;
 		y = 0;
 		g_form = rand() % 7;
 	}
@@ -339,34 +367,50 @@ void input_command()
 		int key = _getch();
 		switch (key)
 		{
-			case LEFT:
-				if (can_move(x - 2, y)) {
-					x -= 2;
-				}
-				break;
-			case RIGHT:
-				if (can_move(x + 2, y)) {
-					x += 2;
-				}
-				break;
-			case DOWN:
+		case LEFT:
+			if (can_move(x - 1, y)) {
+				delete_pre_block();
+				x--;
+			}
+			break;
+		case RIGHT:
+			if (can_move(x + 1, y)) {
+				delete_pre_block();
+				x++;
+			}
+			break;
+		case DOWN:
+			if (can_move(x, y + 1)) {
+				delete_pre_block();
+				y++;
+			}
+			break;
+		case UP:
+			delete_pre_block();
+			g_rotation++;
+			g_rotation %= 4;
+			if (can_move(x, y) == FALSE) {
+				g_rotation += 3;
+				g_rotation %= 4;
+				draw_block();
+			}
+			break;
+		case SPACE:
+			delete_pre_block();
+			while (can_move(x, y) == TRUE) {
 				if (can_move(x, y + 1)) {
 					y++;
+				} else {
+					break;
 				}
-				break;
-			case UP:
-				g_rotation++;
-				g_rotation %= 4;
-				if (can_move(x, y) == FALSE) {
-					g_rotation += 3;
-					g_rotation %= 4;
-				}
-				break;
+			}			
+			cumulate_block();
+			break;
 		}
 	}
 }
 
-void get_score() 
+void remove_line_and_get_score() 
 {
 	for (int i = ROW - 2; i > 0; i--) {
 		int count = 0;
@@ -376,35 +420,64 @@ void get_score()
 			}	
 		}
 		if (count >= COL - 2) {
+			g_score += 10;
 			for (int k = i; k > 1; k--) {
-				for (int x = 1; x < COL; x++) {
-					
+				for (int x = 1; x < COL; x++) {				
 					g_board[k][x] = g_board[k - 1][x];
 					
 				}
 			}
-			
 		}
 	}
 }
 
+int is_finished()
+{
+	for (int i = 0; i < COL; i++) {
+		if (g_board[0][i] == BLOCK) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+void print_menu()
+{
+	gotoxy(55, 5);
+	printf("----------- CONTROL KEY -----------");
+	gotoxy(55, 7);
+	printf("→ : MOVE RIGHT");
+	gotoxy(55, 9);
+	printf("← : MOVE LEFT");
+	gotoxy(55, 11);
+	printf("↓ : MOVE DOWN");
+	gotoxy(55, 13);
+	printf("↑ : ROTATE BLOCK");
+	gotoxy(55, 15);
+	printf("SPACE_BAR : GOTO BOTTOM");
+}
 
 
 int main()
 {
 	CursorView();
 	init_game();
+	print_menu();
 	g_form = rand() % 7;
 
 	while (1) {
 		draw_board();
 		draw_block();
 		drop_block();
-		save_block();
+		cumulate_block();
 		input_command();
-		get_score();
+		remove_line_and_get_score();
+		if (is_finished()) {
+			gotoxy(30, 20);
+			printf("게임 종료\n");
+			break;
+		}
 	}
-	
 	
 	_getch();
 	return 0;
