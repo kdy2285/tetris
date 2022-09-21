@@ -287,6 +287,11 @@ void draw_board()
 	printf("SCORE : %d", g_score);
 }
 
+void make_random_block()
+{
+	g_form = rand() % 7;
+}
+
 void draw_block()
 {
 
@@ -358,7 +363,7 @@ void cumulate_block()
 		}
 		x = 4;
 		y = 0;
-		g_form = rand() % 7;
+		make_random_block();
 	}
 }
 
@@ -398,13 +403,8 @@ void input_command()
 			break;
 		case SPACE:
 			delete_pre_block();
-			while (can_move(x, y) == TRUE) {
-				if (can_move(x, y + 1)) {
-					y++;
-				}
-				else {
-					break;
-				}
+			while (can_move(x, y + 1)) {
+				y++;		
 			}
 			cumulate_block();
 			break;

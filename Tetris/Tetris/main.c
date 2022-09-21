@@ -1,13 +1,11 @@
 #include "tetris.h"
 
-extern int g_form;
-
 int main()
 {
 	CursorView();
 	init_game();
 	print_menu();
-	g_form = rand() % 7;
+	make_random_block();
 
 	while (1) {
 		draw_board();
