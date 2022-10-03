@@ -3,7 +3,7 @@
 
 void CursorView();
 void gotoxy(int x, int y);
-void init_game(void);
+void init_game();
 void draw_board();
 void draw_block();
 void make_random_block();

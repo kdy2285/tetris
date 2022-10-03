@@ -17,14 +17,14 @@
 
 int g_buffer[ROW][COL];
 int g_board[ROW][COL];
-int x = 4;
-int y = 0;
+int g_x = 4;
+int g_y = 0;
 int g_form;
 int g_rotation;
 int g_score;
 
-clock_t start;
-clock_t end;
+clock_t g_start;
+clock_t g_end;
 
 int g_block[7][4][4][4] = {
 	{
@@ -298,7 +298,7 @@ void draw_block()
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-				g_board[y + i][x + j] = MOVING_BLOCK;
+				g_board[g_y + i][g_x + j] = MOVING_BLOCK;
 			}
 		}
 	}
@@ -315,7 +315,7 @@ void delete_pre_block()
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-				g_board[y + i][x + j] = EMPTY;
+				g_board[g_y + i][g_x + j] = EMPTY;
 			}
 		}
 	}
@@ -338,14 +338,14 @@ int can_move(int x, int y)
 
 void drop_block()
 {
-	end = clock();
-	if ((float)end - start > 1000) {
-		if (can_move(x, y + 1)) {
+	g_end = clock();
+	if ((float)g_end - g_start > 1000) {
+		if (can_move(g_x, g_y + 1)) {
 
 			delete_pre_block();
 
-			y++;
-			start = clock();
+			g_y++;
+			g_start = clock();
 		}
 	}
 
@@ -353,16 +353,16 @@ void drop_block()
 
 void cumulate_block()
 {
-	if (can_move(x, y + 1) == FALSE) {
+	if (can_move(g_x, g_y + 1) == FALSE) {
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-					g_board[y + i][j + x] = BLOCK;
+					g_board[g_y + i][g_x + j] = BLOCK;
 				}
 			}
 		}
-		x = 4;
-		y = 0;
+		g_x = 4;
+		g_y = 0;
 		make_random_block();
 	}
 }
@@ -374,28 +374,28 @@ void input_command()
 		switch (key)
 		{
 		case LEFT:
-			if (can_move(x - 1, y)) {
+			if (can_move(g_x - 1, g_y)) {
 				delete_pre_block();
-				x--;
+				g_x--;
 			}
 			break;
 		case RIGHT:
-			if (can_move(x + 1, y)) {
+			if (can_move(g_x + 1, g_y)) {
 				delete_pre_block();
-				x++;
+				g_x++;
 			}
 			break;
 		case DOWN:
-			if (can_move(x, y + 1)) {
+			if (can_move(g_x, g_y + 1)) {
 				delete_pre_block();
-				y++;
+				g_y++;
 			}
 			break;
 		case UP:
 			delete_pre_block();
 			g_rotation++;
 			g_rotation %= 4;
-			if (can_move(x, y) == FALSE) {
+			if (can_move(g_x, g_y) == FALSE) {
 				g_rotation += 3;
 				g_rotation %= 4;
 				draw_block();
@@ -403,8 +403,8 @@ void input_command()
 			break;
 		case SPACE:
 			delete_pre_block();
-			while (can_move(x, y + 1)) {
-				y++;		
+			while (can_move(g_x, g_y + 1)) {
+				g_y++;
 			}
 			cumulate_block();
 			break;
