@@ -15,10 +15,21 @@
 #define SPACE (32)
 #define TIME (500) 
 
+typedef struct g_position {
+	int x;
+	int y;
+} g_position_t;
+
+typedef enum EBlocks {
+	EMPTY,
+	BLOCK,
+	MOVING_BLOCK,
+	WALL
+};
+
 int g_buffer[ROW][COL];
 int g_board[ROW][COL];
-int g_x = 4;
-int g_y = 0;
+g_position_t g_position;
 int g_form;
 int g_rotation;
 int g_score;
@@ -211,12 +222,7 @@ int g_block[7][4][4][4] = {
 	}
 };
 
-typedef enum EBlocks {
-	EMPTY,
-	BLOCK,
-	MOVING_BLOCK,
-	WALL
-};
+
 
 void CursorView()
 {
@@ -239,6 +245,8 @@ void init_game()
 {
 	g_rotation = 0;
 	g_score = 0;
+	g_position.x = 4;
+	g_position.y = 0;
 
 	for (int i = 0; i < ROW; i++) {
 		for (int j = 0; j < COL; j++) {
@@ -294,11 +302,10 @@ void make_random_block()
 
 void draw_block()
 {
-
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-				g_board[g_y + i][g_x + j] = MOVING_BLOCK;
+				g_board[g_position.y + i][g_position.x + j] = MOVING_BLOCK;
 			}
 		}
 	}
@@ -315,7 +322,7 @@ void delete_pre_block()
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-				g_board[g_y + i][g_x + j] = EMPTY;
+				g_board[g_position.y + i][g_position.x + j] = EMPTY;
 			}
 		}
 	}
@@ -340,11 +347,11 @@ void drop_block()
 {
 	g_end = clock();
 	if ((float)g_end - g_start > 1000) {
-		if (can_move(g_x, g_y + 1)) {
+		if (can_move(g_position.x, g_position.y + 1)) {
 
 			delete_pre_block();
 
-			g_y++;
+			g_position.y++;
 			g_start = clock();
 		}
 	}
@@ -353,16 +360,16 @@ void drop_block()
 
 void cumulate_block()
 {
-	if (can_move(g_x, g_y + 1) == FALSE) {
+	if (can_move(g_position.x, g_position.y + 1) == FALSE) {
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				if (g_block[g_form][g_rotation][i][j] == BLOCK) {
-					g_board[g_y + i][g_x + j] = BLOCK;
+					g_board[g_position.y + i][g_position.x + j] = BLOCK;
 				}
 			}
 		}
-		g_x = 4;
-		g_y = 0;
+		g_position.x = 4;
+		g_position.y = 0;
 		make_random_block();
 	}
 }
@@ -374,28 +381,28 @@ void input_command()
 		switch (key)
 		{
 		case LEFT:
-			if (can_move(g_x - 1, g_y)) {
+			if (can_move(g_position.x - 1, g_position.y)) {
 				delete_pre_block();
-				g_x--;
+				g_position.x--;
 			}
 			break;
 		case RIGHT:
-			if (can_move(g_x + 1, g_y)) {
+			if (can_move(g_position.x + 1, g_position.y)) {
 				delete_pre_block();
-				g_x++;
+				g_position.x++;
 			}
 			break;
 		case DOWN:
-			if (can_move(g_x, g_y + 1)) {
+			if (can_move(g_position.x, g_position.y + 1)) {
 				delete_pre_block();
-				g_y++;
+				g_position.y++;
 			}
 			break;
 		case UP:
 			delete_pre_block();
 			g_rotation++;
 			g_rotation %= 4;
-			if (can_move(g_x, g_y) == FALSE) {
+			if (can_move(g_position.x, g_position.y) == FALSE) {
 				g_rotation += 3;
 				g_rotation %= 4;
 				draw_block();
@@ -403,8 +410,8 @@ void input_command()
 			break;
 		case SPACE:
 			delete_pre_block();
-			while (can_move(g_x, g_y + 1)) {
-				g_y++;
+			while (can_move(g_position.x, g_position.y + 1)) {
+				g_position.y++;
 			}
 			cumulate_block();
 			break;
@@ -425,8 +432,10 @@ void remove_line_and_get_score()
 			g_score += 10;
 			for (int k = i; k > 1; k--) {
 				for (int x = 1; x < COL; x++) {
-					g_board[k][x] = g_board[k - 1][x];
-
+					if (g_board[k][x] == BLOCK) {
+						g_board[k][x] = g_board[k - 1][x];
+					}
+					
 				}
 			}
 		}
