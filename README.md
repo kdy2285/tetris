@@ -1,8 +1,8 @@
-# tetris
+# 콘솔 테트리스
 
-Language : C
 
-IDE : Visual Studio 2022
+
+
 
 
 
