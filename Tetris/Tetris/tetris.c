@@ -419,7 +419,7 @@ void input_command()
 	}
 }
 
-void remove_line_and_get_score()
+void remove_line()
 {
 	for (int i = ROW - 2; i > 0; i--) {
 		int count = 0;
@@ -429,7 +429,7 @@ void remove_line_and_get_score()
 			}
 		}
 		if (count >= COL - 2) {
-			g_score += 10;
+			get_score();
 			for (int k = i; k > 1; k--) {
 				for (int x = 1; x < COL; x++) {
 					if (g_board[k][x] == BLOCK) {
@@ -440,6 +440,11 @@ void remove_line_and_get_score()
 			}
 		}
 	}
+}
+
+void get_score()
+{
+	g_score += 10;
 }
 
 int is_finished()

@@ -12,7 +12,8 @@ int can_move(int x, int y);
 void drop_block();
 void cumulate_block();
 void input_command();
-void remove_line_and_get_score();
+void remove_line();
+void get_score();
 int is_finished();
 void print_menu();
 

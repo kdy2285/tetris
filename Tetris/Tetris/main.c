@@ -13,7 +13,7 @@ int main()
 		drop_block();
 		cumulate_block();
 		input_command();
-		remove_line_and_get_score();
+		remove_line();
 		if (is_finished()) {
 			gotoxy(30, 20);
 			printf("게임 종료\n");
